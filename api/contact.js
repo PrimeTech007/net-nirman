@@ -43,7 +43,12 @@ export default async function handler(req, res) {
   const recaptchaData = await recaptchaVerifyRes.json();
 
   if (!recaptchaData.success || recaptchaData.score < 0.5) {
-    return res.status(400).json({ message: 'Failed reCAPTCHA validation. Are you a robot?' });
+    console.error('reCAPTCHA Failed:', recaptchaData);
+    let msg = 'Failed reCAPTCHA validation.';
+    if (recaptchaData['error-codes'] && recaptchaData['error-codes'].length > 0) {
+      msg += ` (Codes: ${recaptchaData['error-codes'].join(', ')})`;
+    }
+    return res.status(400).json({ message: msg });
   }
 
   // 3. Rate limiting / Cooldown via IP (Firebase)

@@ -93,7 +93,7 @@ export default function FreeDemoSection() {
         </motion.div>
 
         <motion.a
-          href={d.ctaLink}
+          href="https://wa.me/917818832387?text=Hello%20team%20Net%20Nirman%2C%20I%20want%20to%20book%20an%20apointment" target="_blank" rel="noopener noreferrer"
           className="btn-green"
           initial={{ opacity: 0, y: 15 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

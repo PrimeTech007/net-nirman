@@ -10,17 +10,7 @@ export default function AboutSection() {
   const containerRef = useRef(null);
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Image animations
-  // Slides from right (200px), settles in corner (0) over a smooth threshold
-  const imageX = useTransform(scrollYProgress, [0, 0.4, 0.6, 1], [250, -20, 0, 0]);
-  const imageY = useTransform(scrollYProgress, [0, 1], [80, -20]);
-  const imageRotate = useTransform(scrollYProgress, [0, 1], [4, -2]);
-  const imageOpacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
+  // Simple transition without scroll progress dependency
 
   return (
     <SectionWrapper id="about" className="grid-bg" animation="fadeLeft">
@@ -106,11 +96,10 @@ export default function AboutSection() {
           }} />
           
           <motion.div
+            initial={{ opacity: 0, scale: 0.95, x: 30 }}
+            animate={inView ? { opacity: 1, scale: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
             style={{
-              x: imageX,
-              y: imageY,
-              rotate: imageRotate,
-              opacity: imageOpacity,
               zIndex: 10,
               width: '100%',
               maxWidth: '380px', // Adjusted size to fit elegantly next to text

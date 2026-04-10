@@ -9,7 +9,7 @@ const CmsContext = createContext(null);
 export const SECTION_KEYS = [
   'siteConfig', 'heroData', 'problemSolutionData', 'freeDemoData',
   'projectsData', 'processData', 'pricingData', 'trustData',
-  'aboutData', 'reviewsData', 'contactData', 'navLinks',
+  'aboutData', 'teamData', 'reviewsData', 'contactData', 'navLinks',
 ];
 
 function getDefaultData() {
@@ -83,7 +83,7 @@ export function CmsProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    if (email === 'alphatriondk09@gmail.com' && password === 'admin2006') {
+    if ((email === 'alphatriondk09@gmail.com' && password === 'admin2006') || (email === 'himeshk2018@gmail.com' && password === 'admin2018')) {
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (e) {

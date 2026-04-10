@@ -14,31 +14,63 @@ import PricingSection from './sections/PricingSection';
 import TrustSection from './sections/TrustSection';
 import AboutSection from './sections/AboutSection';
 import ReviewsSection from './sections/ReviewsSection';
+import TeamSection from './sections/TeamSection';
 import ContactSection from './sections/ContactSection';
 import Chatbot from './components/Chatbot';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 
-function MainWebsite() {
+function Layout({ children }) {
   return (
     <>
       <Navbar />
-      <main>
-        <HeroSection />
-        <ProblemSolutionSection />
-        <FreeDemoSection />
-        <ProjectsSection />
-        <ProcessSection />
-        <PricingSection />
-        <TrustSection />
-        <AboutSection />
-        <ReviewsSection />
-        <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-          <ContactSection />
-        </GoogleReCaptchaProvider>
+      <main style={{ paddingTop: '72px' }}>
+        {children}
       </main>
       <Chatbot />
       <Footer />
     </>
+  );
+}
+
+function Home() {
+  return (
+    <Layout>
+      <HeroSection />
+      <ProblemSolutionSection />
+      <FreeDemoSection />
+      <ProjectsSection />
+      <ProcessSection />
+      <TrustSection />
+      <ReviewsSection />
+      <div style={{ paddingBottom: '60px' }}></div>
+    </Layout>
+  );
+}
+
+function About() {
+  return (
+    <Layout>
+      <AboutSection />
+      <TeamSection />
+    </Layout>
+  );
+}
+
+function Pricing() {
+  return (
+    <Layout>
+      <PricingSection />
+    </Layout>
+  );
+}
+
+function Contact() {
+  return (
+    <Layout>
+      <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
+        <ContactSection />
+      </GoogleReCaptchaProvider>
+    </Layout>
   );
 }
 
@@ -48,7 +80,10 @@ export default function App() {
       <div className="noise-overlay">
         <PageLoader />
         <Routes>
-          <Route path="/" element={<MainWebsite />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </div>

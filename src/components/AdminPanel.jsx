@@ -284,11 +284,11 @@ export default function AdminPanel() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="admin-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         
         {/* Sidebar */}
-        <div style={{
-          width: '280px', borderRight: '1px solid var(--border)', background: 'rgba(11,15,26,0.5)',
+        <div className="admin-sidebar" style={{
+          borderRight: '1px solid var(--border)', background: 'rgba(11,15,26,0.5)',
           display: 'flex', flexDirection: 'column', overflowY: 'auto'
         }}>
           <div style={{ padding: '24px 20px 12px' }}>
@@ -343,6 +343,13 @@ export default function AdminPanel() {
         </div>
 
       </div>
+      <style>{`
+        .admin-sidebar { width: 280px; }
+        @media (max-width: 768px) {
+          .admin-layout { flex-direction: column !important; overflow: auto !important; }
+          .admin-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--border) !important; flex-shrink: 0; }
+        }
+      `}</style>
     </div>
   );
 }

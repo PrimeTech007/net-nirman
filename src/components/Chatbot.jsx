@@ -21,6 +21,7 @@ export default function Chatbot() {
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef(null);
+  const isDragging = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -82,22 +83,29 @@ export default function Chatbot() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
+      <motion.button
+        drag
+        dragMomentum={false}
+        onDragStart={() => isDragging.current = true}
+        onDragEnd={() => setTimeout(() => isDragging.current = false, 150)}
+        onClick={(e) => {
+          if (isDragging.current) { e.preventDefault(); return; }
+          setIsOpen(true);
+        }}
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 90,
           width: '60px', height: '60px', borderRadius: '50%',
           background: 'linear-gradient(135deg, var(--purple), var(--green))',
           color: 'white', display: isOpen ? 'none' : 'flex',
           alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem',
-          boxShadow: '0 8px 32px rgba(124, 58, 237, 0.4)', border: 'none', cursor: 'pointer',
+          boxShadow: '0 8px 32px rgba(124, 58, 237, 0.4)', border: 'none', cursor: 'grab',
           transition: 'transform 0.3s',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ cursor: 'grabbing' }}
       >
         <HiChat />
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (

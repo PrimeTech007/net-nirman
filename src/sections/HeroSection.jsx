@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useCms } from '../data/cmsProvider';
 import { HiArrowRight, HiOutlineCalendar } from 'react-icons/hi';
+import { Link } from 'react-router-dom';
 
 /* Lightweight floating shapes instead of Three.js for hero — better performance */
 function HeroBackground() {
@@ -47,18 +48,7 @@ export default function HeroSection() {
   const { heroData } = useCms();
   const sectionRef = useRef(null);
 
-  /* Scroll-based 3D parallax for laptop */
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  });
-  
-  // Straight on arrival (0 degrees). Spins dramatically 180 degrees backwards on scroll
-  const laptopY = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const laptopScale = useTransform(scrollYProgress, [0, 1], [1, 0.85]);
-  const laptopRotateY = useTransform(scrollYProgress, [0, 0.8], [0, 180]); // The 180 deg spin
-  const laptopRotateX = useTransform(scrollYProgress, [0, 1], [0, 15]);    // Slight tilt upwards on twist
-  const laptopRotateZ = useTransform(scrollYProgress, [0, 1], [0, 0]);     // Keep level
+  // Removed complex 3D scroll logic
 
   return (
     <section
@@ -143,146 +133,45 @@ export default function HeroSection() {
               transition={{ delay: 0.8 }}
               style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}
             >
-              <a href={heroData.ctaPrimaryLink} className="btn-green">
+              <a href="https://wa.me/917818832387?text=Hello%20team%20Net%20Nirman%2C%20I%20want%20to%20book%20an%20apointment" target="_blank" rel="noopener noreferrer" className="btn-green">
                 {heroData.ctaPrimary} <HiArrowRight />
               </a>
-              <a href={heroData.ctaSecondaryLink} className="btn-secondary">
+              <Link to="/work" className="btn-secondary">
                 <HiOutlineCalendar /> {heroData.ctaSecondary}
-              </a>
+              </Link>
             </motion.div>
           </div>
 
-          {/* Right: Laptop Mockup (3D animated and responsive) */}
+          {/* Right: Motion Video */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 1.2, ease: "easeOut" }}
-            style={{ 
-              y: laptopY, 
-              scale: laptopScale, 
-              rotateX: laptopRotateX, 
-              rotateY: laptopRotateY, 
-              rotateZ: laptopRotateZ,
-              perspective: 2000,
-              transformStyle: 'preserve-3d',
-              zIndex: 10
-            }}
+            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
             className="hero-mockup-wrapper"
+            style={{ position: 'relative', zIndex: 10 }}
           >
-            <div style={{ position: 'relative', width: '100%', maxWidth: '560px', margin: '0 auto', transformStyle: 'preserve-3d' }}>
-              {/* Soft glow behind laptop */}
-              <div style={{
-                position: 'absolute', inset: '-20px', background: 'radial-gradient(ellipse at center, rgba(124, 58, 237, 0.3) 0%, transparent 70%)',
-                filter: 'blur(30px)', zIndex: -1, transform: 'translateZ(-50px)'
-              }} />
-
-              {/* 💻 FRONT FACE: Laptop Screen Body */}
-              <div style={{
-                position: 'relative', borderRadius: '16px', border: '2px solid rgba(255,255,255,0.05)',
-                background: '#040710', aspectRatio: '16/10', overflow: 'hidden', padding: '4px',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1)',
-                borderBottom: '4px solid #1f2937', transformStyle: 'preserve-3d',
-                backfaceVisibility: 'hidden', zIndex: 2
-              }}>
-                {/* Screen Display Area */}
-                <div style={{
-                  width: '100%', height: '100%', background: '#0d1117', borderRadius: '10px',
-                  display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
-                  border: '1px solid #111'
-                }}>
-                  
-                  {/* MacOS Window Controls */}
-                  <div style={{ display: 'flex', gap: '6px', padding: '12px 14px', background: '#161b22', borderBottom: '1px solid #30363d' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f' }} />
-                    <div style={{ flex: 1, textAlign: 'center', fontSize: '0.65rem', color: '#8b949e', letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                      App.jsx — Net Nirman
-                    </div>
-                  </div>
-
-                  {/* Animated Code Typing Area */}
-                  <div style={{ padding: '16px 20px', fontFamily: '"Fira Code", monospace', fontSize: '0.8rem', lineHeight: 1.6, color: '#c9d1d9', flex: 1 }}>
-                    <div><span style={{ color: '#ff7b72' }}>import</span> {'{'} <span style={{ color: '#d2a8ff' }}>Growth</span>, <span style={{ color: '#d2a8ff' }}>Success</span> {'}'} <span style={{ color: '#ff7b72' }}>from</span> <span style={{ color: '#a5d6ff' }}>"net-nirman"</span>;</div>
-                    <div style={{ marginTop: '12px' }}><span style={{ color: '#ff7b72' }}>export default function</span> <span style={{ color: '#d2a8ff' }}>Website</span>() {'{'}</div>
-                    <div style={{ paddingLeft: '20px' }}>
-                      <span style={{ color: '#ff7b72' }}>return</span> (
-                      <div style={{ paddingLeft: '20px', color: '#79c0ff' }}>
-                        {'<agency>'}
-                      </div>
-                      <div style={{ paddingLeft: '40px' }}>
-                        {'<'}span style={'{'}color: <span style={{ color: '#a5d6ff' }}>'premium'</span>{'}'}{'>'}<br />
-                        <motion.span 
-                          initial={{ width: 0, borderRight: '2px solid white' }}
-                          animate={{ width: '100%', borderRight: '0px solid white' }}
-                          transition={{ duration: 2, ease: "linear", repeat: Infinity, repeatType: 'reverse' }}
-                          style={{ color: '#a5d6ff', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                        >
-                          "High-Converting Portfolios"
-                        </motion.span>
-                        <br/>{'</'}span{'>'}
-                        <div style={{ color: '#79c0ff' }}>{'<FastLoad />'}</div>
-                      </div>
-                      <div style={{ paddingLeft: '20px', color: '#79c0ff' }}>
-                        {'</agency>'}
-                      </div>
-                      );
-                    </div>
-                    <div>{'}'}</div>
-                    
-                    {/* Floating Pulse Graphic inside screen */}
-                    <motion.div 
-                      animate={{ scale: [1, 1.05, 1], opacity: [0.6, 1, 0.6] }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                      style={{ position: 'absolute', bottom: '20px', right: '20px', padding: '10px 16px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#4ade80', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', animation: 'pulse-dot 1.5s infinite' }} />
-                      Deploying...
-                    </motion.div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 💻 BACK FACE: Laptop Cover with N Logo */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0,
-                aspectRatio: '16/10', borderRadius: '16px',
-                background: 'linear-gradient(135deg, #1f2937, #111827)',
+            {/* Soft glow behind video */}
+            <div style={{
+              position: 'absolute', inset: '-20px', background: 'radial-gradient(ellipse at center, rgba(124, 58, 237, 0.3) 0%, transparent 70%)',
+              filter: 'blur(30px)', zIndex: -1
+            }} />
+            
+            <video 
+              src="/Video1.mp4" 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              style={{ 
+                width: '100%', 
+                maxWidth: '600px',
+                borderRadius: '16px', 
+                boxShadow: '0 25px 60px rgba(0,0,0,0.5)', 
                 border: '2px solid rgba(255,255,255,0.05)',
-                transform: 'rotateY(180deg) translateZ(1px)', 
-                backfaceVisibility: 'hidden',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.5)', zIndex: 1
-              }}>
-                <div style={{
-                  width: '72px', height: '72px', borderRadius: '16px',
-                  background: 'linear-gradient(135deg, var(--purple), var(--green))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: '2.5rem', fontWeight: 800,
-                  boxShadow: '0 0 30px rgba(124, 58, 237, 0.4)',
-                  fontFamily: 'var(--font-heading)'
-                }}>N</div>
-              </div>
-
-              {/* Laptop Keyboard Base (Translates uniformly below) */}
-              <div style={{
-                position: 'relative', width: '114%', height: '18px', left: '-7%', marginTop: '-2px',
-                background: 'linear-gradient(180deg, #374151 0%, #111827 100%)', borderTop: '2px solid #4b5563',
-                borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.2)',
-                transform: 'translateZ(10px)', transformStyle: 'preserve-3d'
-              }}>
-                {/* Thumb scoop */}
-                <div style={{
-                  position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: '60px', height: '6px', background: '#1f2937',
-                  borderBottomLeftRadius: '4px', borderBottomRightRadius: '4px',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                  backfaceVisibility: 'hidden'
-                }} />
-              </div>
-
-            </div>
+                margin: '0 auto',
+                display: 'block'
+              }} 
+            />
           </motion.div>
         </div>
 

@@ -22,12 +22,7 @@ export default function Footer() {
               fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 700,
               marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px',
             }}>
-              <span style={{
-                width: '32px', height: '32px', borderRadius: '8px',
-                background: 'linear-gradient(135deg, var(--purple), var(--green))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', fontSize: '0.9rem', fontWeight: 800,
-              }}>N</span>
+              <img src="/finalLogo2.png" alt="Net Nirman Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
               <span className="gradient-text-purple">{siteConfig.name}</span>
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: '300px' }}>

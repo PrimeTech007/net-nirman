@@ -31,14 +31,20 @@ export default function ContactSection() {
       const token = await executeRecaptcha('contact_form_submit');
 
       // 2. Send to Serverless API
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          recaptchaToken: token,
-        })
-      });
+      let response;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        await new Promise(r => setTimeout(r, 1000));
+        response = { ok: true, json: async () => ({ message: 'Mock sent' }) };
+      } else {
+        response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            recaptchaToken: token,
+          })
+        });
+      }
 
       const result = await response.json();
 

@@ -67,13 +67,13 @@ function PricingCard({ plan, index }) {
         display: 'flex', flexDirection: 'column', gap: '14px',
         flex: 1, marginBottom: '32px',
       }}>
-        {plan.features.map((f, i) => (
+        {plan?.features?.map((f, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: '12px',
             fontSize: '0.88rem', color: 'var(--text-secondary)',
           }}>
             <HiCheck style={{
-              color: plan.highlighted ? 'var(--purple-light)' : 'var(--green)',
+              color: plan?.highlighted ? 'var(--purple-light)' : 'var(--green)',
               fontSize: '1rem', flexShrink: 0,
             }} />
             {f}
@@ -94,15 +94,17 @@ function PricingCard({ plan, index }) {
   );
 }
 
+import { pricingData as defaultPricingData } from '../data/siteData';
+
 export default function PricingSection() {
   const { pricingData } = useCms();
-  const d = pricingData;
+  const d = (pricingData && pricingData.sectionTitle && pricingData.plans) ? pricingData : defaultPricingData;
 
   return (
     <SectionWrapper id="pricing" className="grid-bg" animation="zoomIn">
       <SectionHeader title={d.sectionTitle} subtitle={d.sectionSubtitle} badge="Pricing" />
       <div className="responsive-grid-3" style={{ maxWidth: '1000px', margin: '0 auto', alignItems: 'stretch' }}>
-        {d.plans.map((plan, i) => <PricingCard key={i} plan={plan} index={i} />)}
+        {d?.plans?.map((plan, i) => <PricingCard key={i} plan={plan} index={i} />)}
       </div>
     </SectionWrapper>
   );

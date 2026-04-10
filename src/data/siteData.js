@@ -26,13 +26,13 @@ export const siteConfig = {
 // ─── HERO SECTION ───────────────────────────────────────────
 export const heroData = {
   badge: "🚀 Trusted by Growing Businesses",
-  headline: "Get More Customers For Your Business With a High-Converting Website",
+  headline: "We help small businesses build a strong online presence with modern, high-converting websites.",
   subtext:
     "I build fast, modern websites that help you grow online — designed to turn every visitor into a paying customer.",
   ctaPrimary: "Get Free Demo",
   ctaSecondary: "View Work",
-  ctaPrimaryLink: "#contact",
-  ctaSecondaryLink: "#projects",
+  ctaPrimaryLink: "/contact",
+  ctaSecondaryLink: "/",
   // Stats shown below hero
   stats: [
     { value: "50+", label: "Businesses Helped" },
@@ -122,7 +122,7 @@ export const freeDemoData = {
     "100% satisfaction guarantee",
   ],
   ctaText: "Get Your Free Demo Now",
-  ctaLink: "#contact",
+  ctaLink: "/contact",
 };
 
 // ─── DEMO PROJECTS ─────────────────────────────────────────
@@ -242,7 +242,7 @@ export const pricingData = {
   plans: [
     {
       name: "Starter",
-      price: "₹9,999",
+      price: "₹5,999",
       period: "one-time",
       description:
         "Perfect for small businesses that need a professional online presence.",
@@ -256,11 +256,11 @@ export const pricingData = {
       ],
       highlighted: false,
       ctaText: "Get Started",
-      ctaLink: "#contact",
+      ctaLink: "/contact",
     },
     {
       name: "Business",
-      price: "₹24,999",
+      price: "₹9,999",
       period: "one-time",
       description:
         "For growing businesses that need a conversion-focused website.",
@@ -277,11 +277,11 @@ export const pricingData = {
       highlighted: true,
       badge: "Most Popular",
       ctaText: "Get Started",
-      ctaLink: "#contact",
+      ctaLink: "/contact",
     },
     {
       name: "Advanced",
-      price: "₹49,999",
+      price: "Custom",
       period: "one-time",
       description:
         "For businesses that need a full-featured web application.",
@@ -297,7 +297,7 @@ export const pricingData = {
       ],
       highlighted: false,
       ctaText: "Get Started",
-      ctaLink: "#contact",
+      ctaLink: "/contact",
     },
   ],
 };
@@ -364,6 +364,26 @@ export const aboutData = {
   ],
 };
 
+// ─── TEAM ──────────────────────────────────────────────────
+export const teamData = {
+  sectionTitle: "Meet The Team",
+  sectionSubtitle: "The minds driving your digital growth.",
+  members: [
+    {
+      name: "Dheeraj Kumar",
+      role: "Founder & CEO",
+      image: "/founder.png",
+      bio: "Leading the vision to help small businesses thrive in the digital landscape.",
+    },
+    {
+      name: "Himesh Kashyap",
+      role: "CMO",
+      image: null,
+      bio: "Crafting marketing strategies that turn clicks into loyal customers.",
+    }
+  ]
+};
+
 // ─── CLIENT REVIEWS (PLACEHOLDERS) ─────────────────────────
 export const reviewsData = {
   sectionTitle: "What Our Clients Say",
@@ -423,10 +443,8 @@ export const contactData = {
 
 // ─── NAVIGATION ────────────────────────────────────────────
 export const navLinks = [
-  { label: "Home", href: "#hero" },
-  { label: "Work", href: "#projects" },
-  { label: "Process", href: "#process" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Contact", href: "/contact" },
 ];
