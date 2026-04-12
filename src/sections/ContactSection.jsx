@@ -12,7 +12,7 @@ export default function ContactSection() {
   const d = contactData;
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [form, setForm] = useState({ name: '', email: '', message: '', honeypot: '' });
-  const [status, setStatus] = useState('idle'); // idle, submitting, success, error
+  const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -22,41 +22,84 @@ export default function ContactSection() {
     setErrorMessage('');
 
     try {
-      // Get reCAPTCHA token
-      if (!executeRecaptcha) {
-        throw new Error('reCAPTCHA not loaded');
+      // 1. Validate form locally first
+      if (!form.name.trim()) {
+        throw new Error('Please enter your name');
       }
+      if (!form.email.trim()) {
+        throw new Error('Please enter your email');
+      }
+      if (!form.message.trim()) {
+        throw new Error('Please enter your message');
+      }
+
+      // 2. Load reCAPTCHA hook
+      if (!executeRecaptcha) {
+        console.error('❌ reCAPTCHA hook not loaded');
+        throw new Error('reCAPTCHA not loaded. Please refresh the page and try again.');
+      }
+
+      // 3. Execute reCAPTCHA (get token)
+      console.log('🔐 Generating reCAPTCHA token...');
       const token = await executeRecaptcha('contact_form');
 
-      // Send to Serverless API
+      if (!token || typeof token !== 'string' || token.length === 0) {
+        console.error('❌ Token generation failed:', { token });
+        throw new Error('Failed to generate reCAPTCHA token. Please refresh and try again.');
+      }
+
+      console.log('✅ Token generated:', token.substring(0, 30) + '...');
+
+      // 4. Send form with token to API
+      console.log('📤 Submitting form to API...');
+      
       let response;
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Mock response for local development
+        console.log('🧪 [DEV] Using mock API response');
         await new Promise(r => setTimeout(r, 1000));
-        response = { ok: true, json: async () => ({ message: 'Mock sent' }) };
+        response = { 
+          ok: true, 
+          status: 200,
+          json: async () => ({ success: true, message: 'Message sent (mock)' }) 
+        };
       } else {
+        // Production: Call actual API
         response = await fetch('/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...form,
+            name: form.name.trim(),
+            email: form.email.trim(),
+            message: form.message.trim(),
+            honeypot: form.honeypot,
             recaptchaToken: token,
-          })
+          }),
         });
       }
 
       const result = await response.json();
+      console.log('📬 API Response:', { 
+        status: response.status, 
+        success: result.success, 
+        message: result.message 
+      });
 
-      if (response.ok) {
+      // 5. Handle API response
+      if (response.ok && result.success) {
+        console.log('✅ Form submitted successfully');
         setStatus('success');
         setForm({ name: '', email: '', message: '', honeypot: '' });
-        setTimeout(() => setStatus('idle'), 4000);
-      } else {
+        setTimeout(() => setStatus('idle'), 5000);
+      } else if (!response.ok || !result.success) {
+        console.error('❌ API rejected request:', result.message);
         setStatus('error');
-        setErrorMessage(result.message || 'Failed to send message.');
+        setErrorMessage(result.message || 'Failed to send message. Please try again.');
       }
     } catch (err) {
+      console.error('❌ Form submission error:', err.message);
       setStatus('error');
-      setErrorMessage('A network error occurred. Please try again.');
+      setErrorMessage(err.message || 'An error occurred. Please try again.');
     }
   };
 

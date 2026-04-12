@@ -3,6 +3,13 @@ import { Resend } from 'resend';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
+// ============================================================================
+// ENVIRONMENT VALIDATION
+// ============================================================================
+if (!process.env.RECAPTCHA_SECRET_KEY) {
+  console.error('CRITICAL: RECAPTCHA_SECRET_KEY is not set in environment variables');
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const firebaseConfig = {
@@ -18,126 +25,281 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+// ============================================================================
+// HELPER: Verify reCAPTCHA token with Google
+// ============================================================================
+async function verifyRecaptcha(token) {
+  if (!token || typeof token !== 'string' || token.length === 0) {
+    throw new Error('Token: Invalid or empty token provided');
   }
 
-  const { name, email, message, honeypot, recaptchaToken } = req.body;
-
-  // 1. Honeypot check (hidden field)
-  if (honeypot) {
-    return res.status(400).json({ message: 'Bot detected by honeypot.' });
+  if (!process.env.RECAPTCHA_SECRET_KEY) {
+    throw new Error('Config: RECAPTCHA_SECRET_KEY not set in environment');
   }
 
-  // 2. Input validation
-  if (!name || !email || !message || !recaptchaToken) {
-    return res.status(400).json({ message: 'Missing required fields.' });
-  }
-
-  // Basic email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: 'Invalid email format.' });
-  }
-
-  if (name.length < 2 || message.length < 10) {
-    return res.status(400).json({ message: 'Name or message too short.' });
-  }
-
-  // 3. reCAPTCHA verification
-  let recaptchaScore = 0;
   try {
-    const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: new URLSearchParams({
         secret: process.env.RECAPTCHA_SECRET_KEY,
-        response: recaptchaToken,
-      }),
+        response: token,
+      }).toString(),
     });
 
-    const recaptchaData = await recaptchaResponse.json();
-
-    if (!recaptchaData.success) {
-      return res.status(400).json({ message: 'reCAPTCHA verification failed.' });
+    if (!response.ok) {
+      throw new Error(`Google API returned status ${response.status}`);
     }
 
-    recaptchaScore = recaptchaData.score;
-    if (recaptchaScore < 0.5) {
-      return res.status(400).json({ message: 'Suspicious activity detected. Please try again.' });
-    }
+    const data = await response.json();
+
+    console.log('✅ [reCAPTCHA] Google verification successful:', {
+      success: data.success,
+      score: data.score,
+      action: data.action,
+      hostname: data.hostname,
+      errorCodes: data['error-codes'] || 'none',
+    });
+
+    return data;
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
-    return res.status(500).json({ message: 'Verification service unavailable.' });
+    console.error('❌ [reCAPTCHA] Verification failed:', error.message);
+    throw error;
+  }
+}
+
+// ============================================================================
+// HELPER: Validate contact form input
+// ============================================================================
+function validateInput(name, email, message) {
+  if (!name || name.trim().length < 2) {
+    return 'Name must be at least 2 characters';
   }
 
-  // 4. Rate limiting / Cooldown via IP (Firebase)
-  const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  if (!email || email.trim().length === 0) {
+    return 'Email is required';
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return 'Invalid email format';
+  }
+
+  if (!message || message.trim().length < 10) {
+    return 'Message must be at least 10 characters';
+  }
+
+  return null; // Valid
+}
+
+// ============================================================================
+// HELPER: Get recipient email from Firebase
+// ============================================================================
+async function getRecipientEmail() {
+  try {
+    const cmsSnap = await getDoc(doc(db, 'cms', 'content'));
+    if (cmsSnap.exists() && cmsSnap.data().siteConfig?.email) {
+      return cmsSnap.data().siteConfig.email;
+    }
+  } catch (e) {
+    console.warn('[Email] Could not fetch from CMS:', e.message);
+  }
+  return 'contact@netnirman.com'; // Fallback
+}
+
+// ============================================================================
+// HELPER: Rate limiting (per IP)
+// ============================================================================
+async function checkAndUpdateRateLimit(clientIp) {
   const ipHash = Buffer.from(clientIp).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
-  
   const rateLimitRef = doc(db, 'rateLimits', ipHash);
   const rateLimitSnap = await getDoc(rateLimitRef);
 
   const NOW = Date.now();
   const TEN_MINUTES = 10 * 60 * 1000;
+  const MAX_REQUESTS = 3;
 
   if (rateLimitSnap.exists()) {
     const data = rateLimitSnap.data();
-    const lastRequest = data.lastRequest;
+    const lastRequest = data.lastRequest || 0;
     const count = data.count || 0;
 
     if (NOW - lastRequest < TEN_MINUTES) {
-      if (count >= 3) {
-        return res.status(429).json({ message: 'You are sending messages too fast. Please wait 10 minutes.' });
+      if (count >= MAX_REQUESTS) {
+        const retrySeconds = Math.ceil((TEN_MINUTES - (NOW - lastRequest)) / 1000);
+        throw {
+          status: 429,
+          message: `Too many requests. Please try again in ${retrySeconds} seconds.`,
+        };
       }
       await setDoc(rateLimitRef, { count: count + 1, lastRequest: NOW }, { merge: true });
     } else {
-      // Reset after 10 min
+      // Window expired
       await setDoc(rateLimitRef, { count: 1, lastRequest: NOW });
     }
   } else {
+    // First request
     await setDoc(rateLimitRef, { count: 1, lastRequest: NOW });
   }
+}
 
-  // 5. Get recipient email from CMS
-  let recipientEmail = 'your-email@gmail.com';
-  try {
-    const cmsSnap = await getDoc(doc(db, 'cms', 'content'));
-    if (cmsSnap.exists() && cmsSnap.data().siteConfig?.email) {
-      recipientEmail = cmsSnap.data().siteConfig.email;
-    }
-  } catch (e) {
-    console.error('Failed to get CMS email:', e);
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+export default async function handler(req, res) {
+  // Add CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  // 6. Send Email
-  try {
-    const { error } = await resend.emails.send({
-      from: 'Net Nirman <onboarding@resend.dev>',
-      to: recipientEmail,
-      subject: `New Lead from ${name} (Net Nirman)`,
-      html: `
-        <h2>New Website Contact</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message}</p>
-        <hr/>
-        <p><small>IP: ${clientIp}</small></p>
-        <p><small>reCAPTCHA Score: ${recaptchaScore}</small></p>
-      `
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      success: false,
+      message: 'Method Not Allowed',
     });
+  }
 
-    if (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Error sending email' });
+  const { name, email, message, honeypot, recaptchaToken } = req.body;
+
+  try {
+    // ← 1. HONEYPOT CHECK
+    if (honeypot && honeypot.trim() !== '') {
+      console.warn('⚠️ [Spam] Honeypot field was filled');
+      return res.status(200).json({ success: true, message: 'Message sent!' });
     }
 
-    return res.status(200).json({ message: 'Message sent successfully.' });
+    // ← 2. GET CLIENT IP
+    const clientIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.headers['x-real-ip'] ||
+      req.connection.remoteAddress ||
+      'unknown';
 
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.log('📍 [Request] From IP:', clientIp);
+
+    // ← 3. RATE LIMIT CHECK
+    try {
+      await checkAndUpdateRateLimit(clientIp);
+    } catch (limitError) {
+      console.warn('🚫 [RateLimit] Rejected:', limitError.message);
+      return res.status(limitError.status || 429).json({
+        success: false,
+        message: limitError.message,
+      });
+    }
+
+    // ← 4. VALIDATE INPUTS
+    const validationError = validateInput(name, email, message);
+    if (validationError) {
+      console.warn('❌ [Validation] Failed:', validationError);
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
+
+    // ← 5. CHECK TOKEN
+    if (!recaptchaToken || typeof recaptchaToken !== 'string' || recaptchaToken.length === 0) {
+      console.error('❌ [Token] Missing or invalid');
+      return res.status(400).json({
+        success: false,
+        message: 'reCAPTCHA token missing. Please refresh and try again.',
+      });
+    }
+
+    // ← 6. VERIFY WITH GOOGLE
+    let recaptchaData;
+    try {
+      recaptchaData = await verifyRecaptcha(recaptchaToken);
+    } catch (error) {
+      console.error('❌ [reCAPTCHA] Google verification failed:', error.message);
+      return res.status(500).json({
+        success: false,
+        message: 'reCAPTCHA verification failed. Please refresh and try again.',
+      });
+    }
+
+    // ← 7. CHECK GOOGLE RESPONSE
+    if (!recaptchaData.success) {
+      const errorCodes = recaptchaData['error-codes'] || [];
+      console.error('❌ [reCAPTCHA] Google rejected:', errorCodes.join(', '));
+
+      let userMessage = 'reCAPTCHA verification failed.';
+      if (errorCodes.includes('timeout-or-duplicate')) {
+        userMessage = 'reCAPTCHA token expired. Please try again.';
+      } else if (errorCodes.includes('missing-input-secret')) {
+        userMessage = 'Server configuration error. Contact support.';
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: userMessage,
+      });
+    }
+
+    // ← 8. CHECK SCORE
+    const score = recaptchaData.score || 0;
+    console.log('📊 [Score] reCAPTCHA score:', score);
+
+    if (score < 0.5) {
+      console.warn('⚠️ [Score] Too low:', score);
+      return res.status(400).json({
+        success: false,
+        message: 'Suspicious activity detected. Please try again.',
+      });
+    }
+
+    // ← 9. GET EMAIL
+    const recipientEmail = await getRecipientEmail();
+    console.log('📧 [Email] Sending to:', recipientEmail);
+
+    // ← 10. SEND EMAIL
+    try {
+      const { error: sendError } = await resend.emails.send({
+        from: 'Net Nirman <onboarding@resend.dev>',
+        to: recipientEmail,
+        replyTo: email.trim(),
+        subject: `New Contact from ${name}`,
+        html: `
+          <div style="font-family: Arial; max-width: 600px;">
+            <h2 style="color: #0f172a;">New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap;">${message}</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">IP: ${clientIp} | Score: ${score.toFixed(2)} | Time: ${new Date().toISOString()}</p>
+          </div>
+        `,
+      });
+
+      if (sendError) {
+        console.error('❌ [Email] Send failed:', sendError);
+      } else {
+        console.log('✅ [Email] Sent successfully');
+      }
+    } catch (emailError) {
+      console.error('❌ [Email] Error:', emailError.message);
+      // Don't fail the request, email might retry
+    }
+
+    // ← 11. SUCCESS
+    console.log('✅ [Success] Form submitted successfully');
+    return res.status(200).json({
+      success: true,
+      message: 'Thank you! Your message has been received. We will get back to you soon.',
+    });
+  } catch (error) {
+    console.error('❌ [Handler] Unexpected error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An unexpected error occurred. Please try again later.',
+    });
   }
 }
