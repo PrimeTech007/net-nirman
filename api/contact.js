@@ -6,8 +6,12 @@ import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 // ============================================================================
 // ENVIRONMENT VALIDATION
 // ============================================================================
+if (!process.env.RESEND_API_KEY) {
+  console.error('CRITICAL: RESEND_API_KEY is not set in environment variables');
+}
+
 if (!process.env.RECAPTCHA_SECRET_KEY) {
-  console.error('CRITICAL: RECAPTCHA_SECRET_KEY is not set in environment variables');
+  console.warn('⚠️ WARNING: RECAPTCHA_SECRET_KEY not set - reCAPTCHA verification will be bypassed');
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -26,7 +30,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ============================================================================
-// HELPER: Verify reCAPTCHA token with Google
+// HELPER: Verify reCAPTCHA token with Google (conditional)
 // ============================================================================
 async function verifyRecaptcha(token) {
   if (!token || typeof token !== 'string' || token.length === 0) {
@@ -34,7 +38,8 @@ async function verifyRecaptcha(token) {
   }
 
   if (!process.env.RECAPTCHA_SECRET_KEY) {
-    throw new Error('Config: RECAPTCHA_SECRET_KEY not set in environment');
+    console.warn('⚠️ [reCAPTCHA] Bypassing verification - RECAPTCHA_SECRET_KEY not set');
+    return { success: true, score: 1.0, bypassed: true };
   }
 
   try {
@@ -213,46 +218,50 @@ export default async function handler(req, res) {
       });
     }
 
-    // ← 6. VERIFY WITH GOOGLE
+    // ← 6. VERIFY WITH GOOGLE (conditional)
     let recaptchaData;
     try {
       recaptchaData = await verifyRecaptcha(recaptchaToken);
     } catch (error) {
-      console.error('❌ [reCAPTCHA] Google verification failed:', error.message);
+      console.error('❌ [reCAPTCHA] Verification failed:', error.message);
       return res.status(500).json({
         success: false,
         message: 'reCAPTCHA verification failed. Please refresh and try again.',
       });
     }
 
-    // ← 7. CHECK GOOGLE RESPONSE
-    if (!recaptchaData.success) {
-      const errorCodes = recaptchaData['error-codes'] || [];
-      console.error('❌ [reCAPTCHA] Google rejected:', errorCodes.join(', '));
+    // ← 7. CHECK GOOGLE RESPONSE (skip if bypassed)
+    if (!recaptchaData.bypassed) {
+      if (!recaptchaData.success) {
+        const errorCodes = recaptchaData['error-codes'] || [];
+        console.error('❌ [reCAPTCHA] Google rejected:', errorCodes.join(', '));
 
-      let userMessage = 'reCAPTCHA verification failed.';
-      if (errorCodes.includes('timeout-or-duplicate')) {
-        userMessage = 'reCAPTCHA token expired. Please try again.';
-      } else if (errorCodes.includes('missing-input-secret')) {
-        userMessage = 'Server configuration error. Contact support.';
+        let userMessage = 'reCAPTCHA verification failed.';
+        if (errorCodes.includes('timeout-or-duplicate')) {
+          userMessage = 'reCAPTCHA token expired. Please try again.';
+        } else if (errorCodes.includes('missing-input-secret')) {
+          userMessage = 'Server configuration error. Contact support.';
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: userMessage,
+        });
       }
 
-      return res.status(400).json({
-        success: false,
-        message: userMessage,
-      });
-    }
+      // ← 8. CHECK SCORE
+      const score = recaptchaData.score || 0;
+      console.log('📊 [Score] reCAPTCHA score:', score);
 
-    // ← 8. CHECK SCORE
-    const score = recaptchaData.score || 0;
-    console.log('📊 [Score] reCAPTCHA score:', score);
-
-    if (score < 0.5) {
-      console.warn('⚠️ [Score] Too low:', score);
-      return res.status(400).json({
-        success: false,
-        message: 'Suspicious activity detected. Please try again.',
-      });
+      if (score < 0.5) {
+        console.warn('⚠️ [Score] Too low:', score);
+        return res.status(400).json({
+          success: false,
+          message: 'Suspicious activity detected. Please try again.',
+        });
+      }
+    } else {
+      console.log('📊 [Score] Bypassed - no score check');
     }
 
     // ← 9. GET EMAIL
@@ -260,6 +269,7 @@ export default async function handler(req, res) {
     console.log('📧 [Email] Sending to:', recipientEmail);
 
     // ← 10. SEND EMAIL
+    const scoreDisplay = recaptchaData.bypassed ? 'bypassed' : (recaptchaData.score || 0).toFixed(2);
     try {
       const { error: sendError } = await resend.emails.send({
         from: 'Net Nirman <onboarding@resend.dev>',
@@ -274,7 +284,7 @@ export default async function handler(req, res) {
             <p><strong>Message:</strong></p>
             <p style="white-space: pre-wrap;">${message}</p>
             <hr />
-            <p style="font-size: 12px; color: #666;">IP: ${clientIp} | Score: ${score.toFixed(2)} | Time: ${new Date().toISOString()}</p>
+            <p style="font-size: 12px; color: #666;">IP: ${clientIp} | Score: ${scoreDisplay} | Time: ${new Date().toISOString()}</p>
           </div>
         `,
       });
