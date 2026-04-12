@@ -18,7 +18,6 @@ import ReviewsSection from './sections/ReviewsSection';
 import TeamSection from './sections/TeamSection';
 import ContactSection from './sections/ContactSection';
 import Chatbot from './components/Chatbot';
-import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 
 function Layout({ children }) {
   return (
@@ -83,22 +82,20 @@ function Work() {
 
 export default function App() {
   return (
-    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-      <CmsProvider>
-        <div className="noise-overlay">
-          <PageLoader />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/work" element={<Work />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/dashboard/clients" element={<ClientsPage />} />
-            <Route path="/dashboard/project/:id" element={<ProjectPage />} />
-          </Routes>
-        </div>
-      </CmsProvider>
-    </GoogleReCaptchaProvider>
+    <CmsProvider>
+      <div className="noise-overlay">
+        <PageLoader />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/work" element={<Work />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/dashboard/clients" element={<ClientsPage />} />
+          <Route path="/dashboard/project/:id" element={<ProjectPage />} />
+        </Routes>
+      </div>
+    </CmsProvider>
   );
 }

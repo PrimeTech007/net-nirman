@@ -518,17 +518,6 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--border);
 }
 
-/* Hide reCAPTCHA badge while keeping reCAPTCHA active */
-.grecaptcha-badge {
-  visibility: hidden !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-}
-
 .admin-btn {
   padding: 8px 16px;
   border-radius: 8px;

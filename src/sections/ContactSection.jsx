@@ -5,7 +5,6 @@ import SectionWrapper, { SectionHeader } from '../components/SectionWrapper';
 import { useCms } from '../data/cmsProvider';
 import { HiOutlineMail, HiOutlinePhone, HiArrowRight } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function ContactSection() {
   const { contactData, siteConfig } = useCms();
@@ -14,7 +13,6 @@ export default function ContactSection() {
   const [form, setForm] = useState({ name: '', email: '', message: '', honeypot: '' });
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,24 +31,7 @@ export default function ContactSection() {
         throw new Error('Please enter your message');
       }
 
-      // 2. Load reCAPTCHA hook
-      if (!executeRecaptcha) {
-        console.error('❌ reCAPTCHA hook not loaded');
-        throw new Error('reCAPTCHA not loaded. Please refresh the page and try again.');
-      }
-
-      // 3. Execute reCAPTCHA (get token)
-      console.log('🔐 Generating reCAPTCHA token...');
-      const token = await executeRecaptcha('contact_form');
-
-      if (!token || typeof token !== 'string' || token.length === 0) {
-        console.error('❌ Token generation failed:', { token });
-        throw new Error('Failed to generate reCAPTCHA token. Please refresh and try again.');
-      }
-
-      console.log('✅ Token generated:', token.substring(0, 30) + '...');
-
-      // 4. Send form with token to API
+      // 2. Send form to API
       console.log('📤 Submitting form to API...');
       
       let response;
@@ -73,7 +54,7 @@ export default function ContactSection() {
             email: form.email.trim(),
             message: form.message.trim(),
             honeypot: form.honeypot,
-            recaptchaToken: token,
+
           }),
         });
       }
@@ -85,7 +66,7 @@ export default function ContactSection() {
         message: result.message 
       });
 
-      // 5. Handle API response
+      // 3. Handle API response
       if (response.ok && result.success) {
         console.log('✅ Form submitted successfully');
         setStatus('success');

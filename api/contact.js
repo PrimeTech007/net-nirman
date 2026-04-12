@@ -170,7 +170,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const { name, email, message, honeypot, recaptchaToken } = req.body;
+  const { name, email, message, honeypot } = req.body;
 
   try {
     // ← 1. HONEYPOT CHECK
@@ -209,67 +209,21 @@ export default async function handler(req, res) {
       });
     }
 
-    // ← 5. CHECK TOKEN
-    if (!recaptchaToken || typeof recaptchaToken !== 'string' || recaptchaToken.length === 0) {
-      console.error('❌ [Token] Missing or invalid');
+    // ← 5. VALIDATE INPUTS
+    const validationError = validateInput(name, email, message);
+    if (validationError) {
+      console.warn('❌ [Validation] Failed:', validationError);
       return res.status(400).json({
         success: false,
-        message: 'reCAPTCHA token missing. Please refresh and try again.',
+        message: validationError,
       });
     }
 
-    // ← 6. VERIFY WITH GOOGLE (conditional)
-    let recaptchaData;
-    try {
-      recaptchaData = await verifyRecaptcha(recaptchaToken);
-    } catch (error) {
-      console.error('❌ [reCAPTCHA] Verification failed:', error.message);
-      return res.status(500).json({
-        success: false,
-        message: 'reCAPTCHA verification failed. Please refresh and try again.',
-      });
-    }
-
-    // ← 7. CHECK GOOGLE RESPONSE (skip if bypassed)
-    if (!recaptchaData.bypassed) {
-      if (!recaptchaData.success) {
-        const errorCodes = recaptchaData['error-codes'] || [];
-        console.error('❌ [reCAPTCHA] Google rejected:', errorCodes.join(', '));
-
-        let userMessage = 'reCAPTCHA verification failed.';
-        if (errorCodes.includes('timeout-or-duplicate')) {
-          userMessage = 'reCAPTCHA token expired. Please try again.';
-        } else if (errorCodes.includes('missing-input-secret')) {
-          userMessage = 'Server configuration error. Contact support.';
-        }
-
-        return res.status(400).json({
-          success: false,
-          message: userMessage,
-        });
-      }
-
-      // ← 8. CHECK SCORE
-      const score = recaptchaData.score || 0;
-      console.log('📊 [Score] reCAPTCHA score:', score);
-
-      if (score < 0.5) {
-        console.warn('⚠️ [Score] Too low:', score);
-        return res.status(400).json({
-          success: false,
-          message: 'Suspicious activity detected. Please try again.',
-        });
-      }
-    } else {
-      console.log('📊 [Score] Bypassed - no score check');
-    }
-
-    // ← 9. GET EMAIL
+    // ← 6. GET EMAIL
     const recipientEmail = await getRecipientEmail();
     console.log('📧 [Email] Sending to:', recipientEmail);
 
-    // ← 10. SEND EMAIL
-    const scoreDisplay = recaptchaData.bypassed ? 'bypassed' : (recaptchaData.score || 0).toFixed(2);
+    // ← 7. SEND EMAIL
     try {
       const { error: sendError } = await resend.emails.send({
         from: 'Net Nirman <onboarding@resend.dev>',
@@ -284,7 +238,7 @@ export default async function handler(req, res) {
             <p><strong>Message:</strong></p>
             <p style="white-space: pre-wrap;">${message}</p>
             <hr />
-            <p style="font-size: 12px; color: #666;">IP: ${clientIp} | Score: ${scoreDisplay} | Time: ${new Date().toISOString()}</p>
+            <p style="font-size: 12px; color: #666;">IP: ${clientIp} | Time: ${new Date().toISOString()}</p>
           </div>
         `,
       });
@@ -299,7 +253,7 @@ export default async function handler(req, res) {
       // Don't fail the request, email might retry
     }
 
-    // ← 11. SUCCESS
+    // ← 8. SUCCESS
     console.log('✅ [Success] Form submitted successfully');
     return res.status(200).json({
       success: true,
