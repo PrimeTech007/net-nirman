@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://netnirman.com/sitemap.xml
+Host: netnirman.com

@@ -1,10 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useCms } from '../data/cmsProvider';
-import { HiDownload, HiUpload, HiTrash, HiSave, HiRefresh, HiLogout } from 'react-icons/hi';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { HiDownload, HiUpload, HiRefresh, HiLogout } from 'react-icons/hi';
+import VisualSectionEditor from './cms/VisualSectionEditor';
 
 const LABELS = {
   siteConfig: '⚙️ Site Settings',
@@ -16,6 +14,7 @@ const LABELS = {
   pricingData: '💰 Pricing',
   trustData: '🛡️ Trust / Why Us',
   aboutData: '👤 About',
+  teamData: '🤗 Team',
   reviewsData: '⭐ Client Reviews',
   contactData: '📞 Contact',
   navLinks: '🔗 Navigation Links',
@@ -53,14 +52,14 @@ function LoginScreen({ onLogin }) {
       }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
         &larr; Back to Website
       </Link>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
         className="glass-card-glow"
         style={{
           width: '100%', maxWidth: '420px', padding: '48px 40px',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          textAlign: 'center'
+          textAlign: 'center',
+          opacity: 1,
+          transform: 'translateY(0)',
         }}
       >
         <div style={{
@@ -120,88 +119,11 @@ function LoginScreen({ onLogin }) {
         </form>
 
         {error && (
-          <motion.p 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            style={{ color: 'var(--red)', fontSize: '0.82rem', marginTop: '16px', padding: '8px 12px', background: 'rgba(248,113,113,0.1)', borderRadius: '8px', border: '1px solid rgba(248,113,113,0.2)' }}
-          >
+          <p style={{ color: 'var(--red)', fontSize: '0.82rem', marginTop: '16px', padding: '8px 12px', background: 'rgba(248,113,113,0.1)', borderRadius: '8px', border: '1px solid rgba(248,113,113,0.2)' }}>
             {error}
-          </motion.p>
+          </p>
         )}
-      </motion.div>
-    </div>
-  );
-}
-
-function SectionEditor({ sectionKey, data, onSave }) {
-  const [json, setJson] = useState(() => JSON.stringify(data, null, 2));
-  const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    // Only update if not typing to avoid cursor jumps
-    if (!saved) {
-      setJson(JSON.stringify(data, null, 2));
-    }
-  }, [data]);
-
-  const handleSave = () => {
-    try {
-      const parsed = JSON.parse(json);
-      if (parsed === null || typeof parsed !== 'object') {
-        setError('Content must be an object or array');
-        return;
-      }
-      onSave(sectionKey, parsed);
-      setError(null);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (e) {
-      setError('Format Error: Please check your formatting. ' + e.message);
-    }
-  };
-
-  const handleFormat = () => {
-    try {
-      const parsed = JSON.parse(json);
-      setJson(JSON.stringify(parsed, null, 2));
-      setError(null);
-    } catch (e) {
-      setError('Cannot format — fix errors first.');
-    }
-  };
-
-  return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
-        <button onClick={handleSave} className="btn-green" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
-          <HiSave /> {saved ? 'Saved Successfully' : 'Publish Changes'}
-        </button>
-        <button onClick={handleFormat} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
-          Format Text
-        </button>
       </div>
-
-      <textarea
-        value={json}
-        onChange={(e) => { setJson(e.target.value); setError(null); }}
-        className="admin-input admin-textarea"
-        style={{
-          minHeight: '400px', fontSize: '0.85rem', fontFamily: '"Fira Code", monospace',
-          lineHeight: 1.6, tabSize: 2, width: '100%', padding: '20px',
-          background: 'rgba(11, 15, 26, 0.6)', border: '1px solid rgba(124, 58, 237, 0.2)'
-        }}
-        spellCheck={false}
-      />
-
-      {error && (
-        <div style={{
-          marginTop: '12px', padding: '12px 16px', borderRadius: '8px',
-          background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)',
-          fontSize: '0.85rem', color: 'var(--red)',
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
     </div>
   );
 }
@@ -255,6 +177,12 @@ export default function AdminPanel() {
             display: 'flex', alignItems: 'center', gap: '4px', transition: 'color 0.2s'
           }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
             &larr; Website
+          </Link>
+          <Link to="/dashboard/clients" style={{
+            color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem',
+            display: 'flex', alignItems: 'center', gap: '4px', transition: 'color 0.2s'
+          }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+            👥 Clients
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '1px solid var(--border)', paddingLeft: '24px' }}>
             <div style={{
@@ -331,15 +259,13 @@ export default function AdminPanel() {
 
         {/* Editor Area */}
         <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
-          <div style={{ padding: '32px 40px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
-              {LABELS[activeTab] || activeTab}
-            </h2>
-            <p style={{ margin: '8px 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Edit the text in quotes to update your live website instantly.
-            </p>
-          </div>
-          <SectionEditor sectionKey={activeTab} data={cms[activeTab]} onSave={updateSection} />
+          <VisualSectionEditor
+            key={activeTab}
+            sectionKey={activeTab}
+            data={cms[activeTab]}
+            onSave={updateSection}
+            label={LABELS[activeTab] || activeTab}
+          />
         </div>
 
       </div>

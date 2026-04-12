@@ -1,10 +1,11 @@
-import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { CmsProvider } from './data/cmsProvider';
 import Navbar from './components/Navbar';
 import PageLoader from './components/PageLoader';
 import Footer from './components/Footer';
 import AdminPanel from './components/AdminPanel';
+import ClientsPage from './pages/ClientsPage';
+import ProjectPage from './pages/ProjectPage';
 import HeroSection from './sections/HeroSection';
 import ProblemSolutionSection from './sections/ProblemSolutionSection';
 import FreeDemoSection from './sections/FreeDemoSection';
@@ -67,26 +68,37 @@ function Pricing() {
 function Contact() {
   return (
     <Layout>
-      <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-        <ContactSection />
-      </GoogleReCaptchaProvider>
+      <ContactSection />
+    </Layout>
+  );
+}
+
+function Work() {
+  return (
+    <Layout>
+      <ProjectsSection />
     </Layout>
   );
 }
 
 export default function App() {
   return (
-    <CmsProvider>
-      <div className="noise-overlay">
-        <PageLoader />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-      </div>
-    </CmsProvider>
+    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
+      <CmsProvider>
+        <div className="noise-overlay">
+          <PageLoader />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/work" element={<Work />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/dashboard/clients" element={<ClientsPage />} />
+            <Route path="/dashboard/project/:id" element={<ProjectPage />} />
+          </Routes>
+        </div>
+      </CmsProvider>
+    </GoogleReCaptchaProvider>
   );
 }

@@ -28,14 +28,26 @@ function ProjectCard({ project, index }) {
           backgroundImage: `linear-gradient(${project.accentColor}12 1px, transparent 1px), linear-gradient(90deg, ${project.accentColor}12 1px, transparent 1px)`,
           backgroundSize: '30px 30px',
         }} />
-        <div style={{
-          position: 'relative', width: '64px', height: '64px', borderRadius: '16px',
-          background: `${project.accentColor}18`, border: `1px solid ${project.accentColor}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.5rem', color: project.accentColor,
-        }}>
-          <HiOutlineCode />
-        </div>
+        {project.image ? (
+          <img
+            src={project.image}
+            alt={project.title}
+            style={{
+              position: 'relative', zIndex: 1,
+              width: '100%', height: '100%', objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <div style={{
+            position: 'relative', width: '64px', height: '64px', borderRadius: '16px',
+            background: `${project.accentColor}18`, border: `1px solid ${project.accentColor}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.5rem', color: project.accentColor,
+            zIndex: 1,
+          }}>
+            <HiOutlineCode />
+          </div>
+        )}
         <div style={{
           position: 'absolute', top: '16px', left: '16px',
           padding: '4px 12px', borderRadius: '999px',

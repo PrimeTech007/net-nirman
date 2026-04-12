@@ -18,19 +18,17 @@ export default function ContactSection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!executeRecaptcha) {
-      setErrorMessage("reCAPTCHA validation failed to load.");
-      return;
-    }
-
     setStatus('submitting');
     setErrorMessage('');
 
     try {
-      // 1. Get reCAPTCHA token
-      const token = await executeRecaptcha('contact_form_submit');
+      // Get reCAPTCHA token
+      if (!executeRecaptcha) {
+        throw new Error('reCAPTCHA not loaded');
+      }
+      const token = await executeRecaptcha('contact_form');
 
-      // 2. Send to Serverless API
+      // Send to Serverless API
       let response;
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         await new Promise(r => setTimeout(r, 1000));
@@ -129,10 +127,6 @@ export default function ContactSection() {
                 {errorMessage}
               </p>
             )}
-            
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
-              Protected by reCAPTCHA.
-            </p>
           </div>
         </motion.form>
 

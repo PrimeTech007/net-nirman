@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import SectionWrapper, { SectionHeader } from '../components/SectionWrapper';
 import { useCms } from '../data/cmsProvider';
@@ -16,27 +15,34 @@ export default function TeamSection() {
       <div 
         ref={ref}
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'stretch',
           gap: '32px',
-          maxWidth: '800px',
+          maxWidth: '1080px',
           margin: '0 auto',
+          padding: '0 12px',
         }}
       >
         {teamData.members.map((member, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: i * 0.2, duration: 0.6 }}
             className="glass-card-glow"
             style={{
+              flex: '1 1 280px',
+              minWidth: '260px',
+              maxWidth: '320px',
               padding: '40px 32px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: '16px',
+              opacity: inView ? 1 : 0,
+              transform: inView ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'opacity 0.6s ease, transform 0.6s ease',
+              transitionDelay: `${i * 0.1}s`,
             }}
           >
             <div style={{
@@ -72,7 +78,7 @@ export default function TeamSection() {
             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '8px' }}>
               {member.bio}
             </p>
-          </motion.div>
+          </div>
         ))}
       </div>
     </SectionWrapper>

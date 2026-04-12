@@ -2,6 +2,7 @@ import { useCms } from '../data/cmsProvider';
 import { FaTwitter, FaLinkedinIn, FaGithub, FaInstagram } from 'react-icons/fa';
 
 const socialIcons = { twitter: FaTwitter, linkedin: FaLinkedinIn, github: FaGithub, instagram: FaInstagram };
+const socialBrandColors = { twitter: '#000000', linkedin: '#0A66C2', github: '#181717', instagram: '#E1306C' };
 
 export default function Footer() {
   const { siteConfig, navLinks } = useCms();
@@ -59,21 +60,20 @@ export default function Footer() {
                 const Icon = socialIcons[key];
                 return (
                   <a key={key} href={url} target="_blank" rel="noopener noreferrer" style={{
-                    width: '40px', height: '40px', borderRadius: '10px',
-                    background: 'rgba(124,58,237,0.04)', border: '1px solid var(--border)',
+                    width: '44px', height: '44px', borderRadius: '14px',
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--text-muted)', textDecoration: 'none',
-                    transition: 'all 0.3s', fontSize: '0.95rem',
+                    color: socialBrandColors[key] || 'var(--text-muted)', textDecoration: 'none',
+                    transition: 'all 0.2s', fontSize: '1rem',
                   }}
+                  title={key === 'twitter' ? 'X' : key.charAt(0).toUpperCase() + key.slice(1)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(124,58,237,0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(124,58,237,0.3)';
-                    e.currentTarget.style.color = 'var(--purple-light)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.14)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(124,58,237,0.04)';
-                    e.currentTarget.style.borderColor = 'var(--border)';
-                    e.currentTarget.style.color = 'var(--text-muted)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}>
                     {Icon && <Icon />}
                   </a>
@@ -91,17 +91,28 @@ export default function Footer() {
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             &copy; {year} {siteConfig.name}. All rights reserved.
           </p>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              Built to grow your business 🚀
+              Desgn & Developed by Net Nirman
             </p>
             <a href="/admin" style={{ 
-              fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'none',
-              opacity: 0.5, transition: 'opacity 0.2s' 
+              fontSize: '0.75rem', color: 'white', textDecoration: 'none',
+              padding: '10px 18px', borderRadius: '999px',
+              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(34, 197, 94, 0.16))',
+              border: '1px solid rgba(124, 58, 237, 0.25)',
+              boxShadow: '0 8px 24px rgba(124, 58, 237, 0.12)',
+              transition: 'transform 0.2s, opacity 0.2s, box-shadow 0.2s',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
             }}
-            onMouseEnter={(e) => e.target.style.opacity = 1}
-            onMouseLeave={(e) => e.target.style.opacity = 0.5}>
-              Admin
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.opacity = '1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.opacity = '1';
+            }}>
+              👑 Admin
             </a>
           </div>
         </div>

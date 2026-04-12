@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useState, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useCms } from '../data/cmsProvider';
 import { HiArrowRight, HiOutlineCalendar } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
@@ -56,12 +56,12 @@ export default function HeroSection() {
       ref={sectionRef}
       style={{
         position: 'relative',
-        minHeight: '100vh',
+        minHeight: 'calc(100vh - 80px)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         overflow: 'hidden',
-        paddingTop: '100px', /* Push content below navbar */
-        paddingBottom: '60px',
+        paddingTop: '80px', /* Push content below navbar */
+        paddingBottom: '40px',
       }}
     >
       <HeroBackground />
@@ -69,7 +69,7 @@ export default function HeroSection() {
       <div className="section-container" style={{ position: 'relative', zIndex: 2, width: '100%' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: '1.1fr 0.9fr',
-          gap: '48px', alignItems: 'center',
+          gap: '48px', alignItems: 'flex-start',
         }} className="hero-grid">
           {/* Left: Text */}
           <div>
@@ -131,7 +131,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}
+              style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '40px' }}
             >
               <a href="https://wa.me/917818832387?text=Hello%20team%20Net%20Nirman%2C%20I%20want%20to%20book%20an%20apointment" target="_blank" rel="noopener noreferrer" className="btn-green">
                 {heroData.ctaPrimary} <HiArrowRight />
@@ -146,7 +146,7 @@ export default function HeroSection() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+            transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
             className="hero-mockup-wrapper"
             style={{ position: 'relative', zIndex: 10 }}
           >
@@ -181,13 +181,15 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.1 }}
           style={{
-            marginTop: '60px', display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px',
+            marginTop: '90px', display: 'flex',
+            flexWrap: 'wrap', justifyContent: 'center', gap: '16px',
+            maxWidth: '1080px', margin: '0 auto',
           }}
           className="hero-stats-grid"
         >
           {heroData.stats.map((stat, i) => (
             <div key={i} style={{
+              flex: '1 1 220px', minWidth: '220px', maxWidth: '260px',
               textAlign: 'center', padding: '16px 12px', borderRadius: '12px',
               background: 'rgba(124, 58, 237, 0.03)', border: '1px solid var(--border)',
             }}>
@@ -218,9 +220,11 @@ export default function HeroSection() {
             margin-top: 40px; 
             transform: scale(0.9) !important; 
           }
-          .hero-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .hero-stats-grid { justify-content: center !important; }
         }
       `}</style>
     </section>
   );
 }
+
+

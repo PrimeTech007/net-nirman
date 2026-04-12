@@ -1,6 +1,7 @@
+/* global process, Buffer */
 import { Resend } from 'resend';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,37 +23,56 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { name, email, message, recaptchaToken, honeypot } = req.body;
+  const { name, email, message, honeypot, recaptchaToken } = req.body;
 
   // 1. Honeypot check (hidden field)
   if (honeypot) {
-    // Spam bot filled out the hidden field
     return res.status(400).json({ message: 'Bot detected by honeypot.' });
   }
 
+  // 2. Input validation
   if (!name || !email || !message || !recaptchaToken) {
     return res.status(400).json({ message: 'Missing required fields.' });
   }
 
-  // 2. reCAPTCHA Validation
-  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
-  const recaptchaVerifyRes = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`,
-    { method: 'POST' }
-  );
-  const recaptchaData = await recaptchaVerifyRes.json();
-
-  if (!recaptchaData.success || recaptchaData.score < 0.5) {
-    console.error('reCAPTCHA Failed:', recaptchaData);
-    let msg = 'Failed reCAPTCHA validation.';
-    if (recaptchaData['error-codes'] && recaptchaData['error-codes'].length > 0) {
-      msg += ` (Codes: ${recaptchaData['error-codes'].join(', ')})`;
-    }
-    return res.status(400).json({ message: msg });
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format.' });
   }
 
-  // 3. Rate limiting / Cooldown via IP (Firebase)
-  // Getting IP from Vercel headers
+  if (name.length < 2 || message.length < 10) {
+    return res.status(400).json({ message: 'Name or message too short.' });
+  }
+
+  // 3. reCAPTCHA verification
+  let recaptchaScore = 0;
+  try {
+    const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: process.env.RECAPTCHA_SECRET_KEY,
+        response: recaptchaToken,
+      }),
+    });
+
+    const recaptchaData = await recaptchaResponse.json();
+
+    if (!recaptchaData.success) {
+      return res.status(400).json({ message: 'reCAPTCHA verification failed.' });
+    }
+
+    recaptchaScore = recaptchaData.score;
+    if (recaptchaScore < 0.5) {
+      return res.status(400).json({ message: 'Suspicious activity detected. Please try again.' });
+    }
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return res.status(500).json({ message: 'Verification service unavailable.' });
+  }
+
+  // 4. Rate limiting / Cooldown via IP (Firebase)
   const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
   const ipHash = Buffer.from(clientIp).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
   
@@ -80,7 +100,7 @@ export default async function handler(req, res) {
     await setDoc(rateLimitRef, { count: 1, lastRequest: NOW });
   }
 
-  // 4. Get recipient email from CMS
+  // 5. Get recipient email from CMS
   let recipientEmail = 'your-email@gmail.com';
   try {
     const cmsSnap = await getDoc(doc(db, 'cms', 'content'));
@@ -91,11 +111,11 @@ export default async function handler(req, res) {
     console.error('Failed to get CMS email:', e);
   }
 
-  // 5. Send Email
+  // 6. Send Email
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Net Nirman <onboarding@resend.dev>', // Free tier uses this domain
-      to: recipientEmail, // Pulled from CMS
+    const { error } = await resend.emails.send({
+      from: 'Net Nirman <onboarding@resend.dev>',
+      to: recipientEmail,
       subject: `New Lead from ${name} (Net Nirman)`,
       html: `
         <h2>New Website Contact</h2>
@@ -104,7 +124,8 @@ export default async function handler(req, res) {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
         <hr/>
-        <p><small>IP: ${clientIp} | reCAPTCHA Score: ${recaptchaData.score}</small></p>
+        <p><small>IP: ${clientIp}</small></p>
+        <p><small>reCAPTCHA Score: ${recaptchaScore}</small></p>
       `
     });
 
