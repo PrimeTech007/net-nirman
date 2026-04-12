@@ -88,9 +88,14 @@ export default function Footer() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           flexWrap: 'wrap', gap: '12px',
         }}>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            &copy; {year} {siteConfig.name}. All rights reserved.
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              &copy; {year} {siteConfig.name}. All rights reserved.
+            </p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '420px', lineHeight: 1.5 }}>
+              This site is protected by reCAPTCHA and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Google Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a> apply.
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
               Desgn & Developed by Net Nirman
